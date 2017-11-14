@@ -171,8 +171,7 @@ const Pbf = (function () {
 
         skip: function (val) {
             var type = val & 0x7;
-            if (type === Pbf.Varint) while (this.buf[this.pos++] > 0x7f) {
-            }
+            if (type === Pbf.Varint) while (this.buf[this.pos++] > 0x7f) { }
             else if (type === Pbf.Bytes) this.pos = this.readVarint() + this.pos;
             else if (type === Pbf.Fixed32) this.pos += 4;
             else if (type === Pbf.Fixed64) this.pos += 8;

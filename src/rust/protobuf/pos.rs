@@ -1,4 +1,4 @@
-//! Automatically generated rust module for 'example.proto' file
+//! Automatically generated rust module for 'pos.proto' file
 
 #![allow(non_snake_case)]
 #![allow(non_upper_case_globals)]
@@ -16,13 +16,13 @@ use quick_protobuf::sizeofs::*;
 use super::*;
 
 #[derive(Debug, Default, PartialEq, Clone)]
-pub struct TransPosition<'a> {
+pub struct RoomPosition<'a> {
     pub x: i32,
     pub y: i32,
     pub roomName: Cow<'a, str>,
 }
 
-impl<'a> TransPosition<'a> {
+impl<'a> RoomPosition<'a> {
     pub fn from_reader(r: &mut BytesReader, bytes: &'a [u8]) -> Result<Self> {
         let mut msg = Self::default();
         while !r.is_eof() {
@@ -38,7 +38,7 @@ impl<'a> TransPosition<'a> {
     }
 }
 
-impl<'a> MessageWrite for TransPosition<'a> {
+impl<'a> MessageWrite for RoomPosition<'a> {
     fn get_size(&self) -> usize {
         0
         + 1 + sizeof_varint(*(&self.x) as u64)
