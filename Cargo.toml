@@ -6,6 +6,10 @@ authors = ["David Ross <daboross@daboross.net>"]
 [dependencies]
 quick-protobuf = "0.5"
 
+[lib]
+name = "screeps_wasm"
+path = "src/rust/lib.rs"
+
 [[bin]]
-name = "screeps-wasm-test"
+name = "screeps-exports"
 path = "src/rust/main.rs"

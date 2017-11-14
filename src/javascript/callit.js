@@ -5,7 +5,7 @@ const Pbf = require('./pbf.js');
 const {RoomPosition} = require('./protobuf/pos.js');
 
 async function main() {
-    let code = fs.readFileSync("target/wasm32-unknown-unknown/release/screeps-wasm-test.wasm").buffer;
+    let code = fs.readFileSync("target/wasm32-unknown-unknown/release/screeps-exports.wasm").buffer;
 
     let instance = await WasmWrapper.new(code);
 
