@@ -1,3 +1,5 @@
+extern crate quick_protobuf;
+
 fn main() {}
 
 fn _fib(input: i32) -> i32 {
@@ -24,21 +26,21 @@ pub extern "C" fn alloc_bytes(total: usize) -> *mut u8 {
     assert_eq!(slice.len(), total);
 
     // cast from *mut [u8] to *mut u8 to get rid of size in pointer
-    Box::into_raw(slice)
+    Box::into_raw(slice) as *mut u8
 }
 
 #[no_mangle]
 pub extern "C" fn sum(input: *mut u8, len: usize) -> i32 {
     let input = unsafe {
-        std::slice::from_raw_parts(input, length)
+        std::slice::from_raw_parts(input, len)
     };
-    input.iter().map(|&x| x as i32).sum();
+    input.iter().map(|&x| x as i32).sum()
 }
 
 #[no_mangle]
 pub extern "C" fn dealloc_bytes(input: *mut u8, len: usize) {
     unsafe {
-        Box::from_raw(std::slice::from_raw_parts_mut(input, length) as *mut _);
+        Box::from_raw(std::slice::from_raw_parts_mut(input, len) as *mut _);
     }
 }
 

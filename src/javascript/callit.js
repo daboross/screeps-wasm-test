@@ -22,14 +22,7 @@ async function main() {
 
     let instance = await WasmWrapper.new(code);
 
-    let [ptr, mem] = instance.alloc(10);
-    console.log("ptr: " + ptr);
-    for (var i = 0; i < mem.length; i++) {
-        mem[i] = 20 + i;
-    }
-    console.log("mem: " + mem);
-    console.log("sum: " + instance.sum(ptr, 10));
-    instance.dealloc(10, ptr);
+    console.log("sum: " + instance.sum_in_rust([1, 2, 3, 4, 5]));
 }
 
 class WasmWrapper {
@@ -58,6 +51,17 @@ class WasmWrapper {
     }
     sum(ptr, len) {
         return this._sum(ptr, len);
+    }
+
+    sum_in_rust(arr) {
+        let len = arr.length;
+        let [ptr, view] = this.alloc(arr.length);
+        for (var i = 0; i < len; i++) {
+            view[i] = arr[i];
+        }
+        let val = this.sum(ptr, len);
+        this.dealloc(ptr, len);
+        return val;
     }
 }
 
