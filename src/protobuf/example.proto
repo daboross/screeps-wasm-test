@@ -1,0 +1,5 @@
+message TransPosition {
+    required int32 x = 1;
+    required int32 y = 2;
+    required string roomName = 3;
+}

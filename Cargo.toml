@@ -1,0 +1,11 @@
+[package]
+name = "screeps-wasm-test"
+version = "0.1.0"
+authors = ["David Ross <daboross@daboross.net>"]
+
+[dependencies]
+quick-protobuf = "0.5"
+
+[[bin]]
+name = "screeps-wasm-test"
+path = "src/rust/main.rs"
