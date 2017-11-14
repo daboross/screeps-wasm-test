@@ -4,49 +4,28 @@ mod protobuf;
 
 fn main() {}
 
-fn _fib(input: i32) -> i32 {
-    let mut last = 0;
-    let mut current = 1;
-    for _ in 0..input {
-        let new = current + last;
-        last = current;
-        current = new;
-    }
-    current
-}
-
-#[no_mangle]
-pub extern "C" fn entry() -> i32 {
-    unsafe { 3 + external::callback(5) }
-}
-
 #[no_mangle]
 pub extern "C" fn alloc_bytes(len: usize) -> *mut u8 {
     let slice = vec![0; len].into_boxed_slice();
     assert_eq!(slice.len(), len);
-
-    utils::debug_str(&format!(
-        "allocated at: {} -> {}",
-        slice.as_ptr() as usize,
-        (slice.as_ptr() as usize) + len
-    ));
 
     // cast from *mut [u8] to *mut u8 to get rid of size in pointer
     Box::into_raw(slice) as *mut u8
 }
 
 #[no_mangle]
-pub extern "C" fn sum(input: *mut u8, len: usize) -> i32 {
-    let input = unsafe { std::slice::from_raw_parts(input, len) };
-    input.iter().map(|&x| x as i32).sum()
+pub extern "C" fn dealloc_bytes(input: *mut u8, len: usize) {
+    unsafe {
+        Box::from_raw(std::slice::from_raw_parts_mut(input, len) as *mut _);
+    }
 }
 
 #[no_mangle]
-pub extern "C" fn retrieve_x(input: *mut u8, len: usize) -> i32 {
+pub extern "C" fn debug_room_position(input: *mut u8, len: usize) {
     utils::debug_str(&format!(
-        "retrieve_x received: {} -> {}",
+        "debug_room_position: received: (ptr {} -> len {})",
         input as usize,
-        (input as usize) + len
+        len
     ));
 
     let input = unsafe { std::slice::from_raw_parts(input, len) };
@@ -59,19 +38,7 @@ pub extern "C" fn retrieve_x(input: *mut u8, len: usize) -> i32 {
         .read_message(input, protobuf::pos::RoomPosition::from_reader)
         .unwrap();
 
-    return position.x;
-}
-
-#[no_mangle]
-pub extern "C" fn dealloc_bytes(input: *mut u8, len: usize) {
-    unsafe {
-        Box::from_raw(std::slice::from_raw_parts_mut(input, len) as *mut _);
-    }
-}
-
-#[no_mangle]
-pub extern "C" fn fib(times: i32) -> i32 {
-    _fib(times)
+    utils::debug_str(&format!("debug_room_position: {:#?}", position));
 }
 
 mod utils {
@@ -94,8 +61,6 @@ mod utils {
 
 mod external {
     extern "C" {
-        pub fn callback(input: i32) -> i32;
-
         pub fn print_bytes(ptr: *mut u8, len: usize);
 
         pub fn print_str(ptr: *mut u8, len: usize);
