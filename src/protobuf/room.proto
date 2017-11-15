@@ -1,0 +1,11 @@
+message XYPos {
+    required uint32 x = 1;
+    required uint32 y = 2;
+}
+
+message Room {
+    required string name = 1;
+    required int32 energyAvailable = 2;
+    required int32 energyCapacityAvailable = 3;
+    repeated XYPos sources = 4;
+}

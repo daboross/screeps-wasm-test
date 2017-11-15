@@ -1,0 +1,6 @@
+import "pos.proto";
+import "spawn.proto";
+import "creep.proto";
+import "room.proto";
+import "everything.proto";
+import "execution.proto";

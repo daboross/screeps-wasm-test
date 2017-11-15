@@ -2,7 +2,7 @@
 const fs = require('fs');
 const Pbf = require('./pbf.js');
 
-const {RoomPosition} = require('./protobuf/pos.js');
+const {RoomPosition, StructureSpawn, AllOwnedSpawns} = require('./protobuf.js');
 
 class ScreepsWasm {
     constructor(wasm_module) {

@@ -1,0 +1,12 @@
+import "pos.proto";
+
+message StructureSpawn {
+    required RoomPosition pos = 1;
+    required int32 hitsMax = 2;
+    required int32 hits = 3;
+    required string id = 4;
+    required int32 energy = 5;
+    required int32 energyCapacity = 6;
+    required string name = 7;
+    required bool spawning = 8;
+}

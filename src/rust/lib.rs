@@ -22,21 +22,30 @@ pub unsafe extern "C" fn deallocate_bytes(ptr: *mut u8, len: usize) {
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn debug_room_position(ptr: *mut u8, len: usize) {
+pub unsafe extern "C" fn operate_world(ptr: *mut u8, len: usize) {
     let input = decoding::read_ptr(ptr, len);
 
-    functionality::debug_room_position(input).expect("TODO: output useful error here");
+    functionality::operate_world(input).expect("TODO: output useful error here");
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn debug_room_position_consuming(ptr: *mut u8, len: usize) {
+pub unsafe extern "C" fn operate_world_consuming(ptr: *mut u8, len: usize) {
     let input = decoding::consume_ptr(ptr, len);
 
-    functionality::debug_room_position(&input).expect("TODO: output useful error here");
+    functionality::operate_world(&input).expect("TODO: output useful error here");
 }
 
 mod imports {
     extern "C" {
         pub fn print_str(ptr: *mut u8, len: usize);
+
+        pub fn execute_spawn_spawn_creep(execution_ptr: *const u8, execution_len: usize) -> i32;
+
+        pub fn execute_creep_move_to(
+            creep_name_ptr: *const u8,
+            creep_name_len: usize,
+            serialized_position_ptr: *const u8,
+            serialized_position_len: usize,
+        ) -> i32;
     }
 }

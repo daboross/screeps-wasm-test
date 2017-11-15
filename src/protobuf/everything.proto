@@ -1,0 +1,9 @@
+import "spawn.proto";
+import "creep.proto";
+import "room.proto";
+
+message World {
+    repeated StructureSpawn spawns = 1;
+    repeated Creep creeps = 2;
+    repeated Room rooms = 3;
+}

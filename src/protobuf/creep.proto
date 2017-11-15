@@ -1,0 +1,20 @@
+import "pos.proto";
+
+message CreepCarry {
+    required string resourceType = 1;
+    required int32 amount = 2;
+}
+
+message Creep {
+    required RoomPosition pos = 1;
+    repeated CreepCarry carry = 2;
+    required int32 carryCapacity = 3;
+    required int32 fatigue = 4;
+    required int32 hits = 5;
+    required int32 hitsMax = 6;
+    required string id = 7;
+    required bool my = 8;
+    required string name = 9;
+    required bool spawning = 10;
+    required int32 ticksToLive = 11;
+}

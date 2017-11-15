@@ -1,0 +1,16 @@
+enum BodyPart {
+    WORK = 1;
+    MOVE = 2;
+    CARRY = 3;
+    ATTACK = 4;
+    RANGED_ATTACK = 5;
+    HEAL = 6;
+    TOUGH = 7;
+    CLAIM = 8;
+}
+
+message CreepSpawn {
+    required string spawn_name = 1;
+    repeated BodyPart body = 2;
+    required string creep_name = 3;
+}
