@@ -17,7 +17,7 @@ pub unsafe fn consume_ptr(ptr: *mut u8, len: usize) -> Vec<u8> {
 pub fn read_protobuf_room_position(input: &[u8]) -> Result<pos::RoomPosition, QpError> {
     // TODO: figure out if quick_protobuf is willing to add a read trait so this isn't duplicated
     // https://github.com/tafia/quick-protobuf/issues/78
-    let mut r =BytesReader::from_bytes(input);
+    let mut r = BytesReader::from_bytes(input);
 
     r.read_message(input, pos::RoomPosition::from_reader)
 }
