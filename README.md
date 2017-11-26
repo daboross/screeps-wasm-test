@@ -3,29 +3,33 @@ Rust WASM tests with the intention to use in Screeps
 
 ### Setup
 
-This is based off of WIP work in https://github.com/rust-lang/rust/pull/45905.
+This is based off of the bare-wasm target in nightly rust. You'll need a nightly
+2017-11-25 or newer.
 
-You'll need to:
-
-- Install regular (nightly) rust using [rustup](https://www.rustup.rs/)
-- Clone https://github.com/alexcrichton/rust with the 'add-wasm-target' branch
-- Build said clone with instructions from https://github.com/rust-lang/rust/pull/45905#issue-272863447
-- Link the toolchain to your rustup with
+To setup:
+- Install rust using [rustup](https://www.rustup.rs/)
+- Add/update nightly toolchain:
 
   ```
-  rustup toolchain link wasm32 build/<your OS tripple here>/stage2
+  rustup update nightly
   ```
+- Add wasm32 target:
 
-  For example, I ran `rustup toolchain link wasm32 build/x86_64-unknown-linux-gnu/stage2`.
-- Install nodeJS version 8 or higher (https://nodejs.org/en/)
+  ```
+  rustup target add --toolchain nightly wasm32-unknown-unknown
+  ```
+- To run locally, install nodeJS version 8 or higher (https://nodejs.org/en/)
 - Clone this project
 - Optionally install:
   - [wasm-gc](https://github.com/alexcrichton/wasm-gc):
+    useful for trimming excess code from .wasm files
+
 
     ```
     cargo install --git https://github.com/alexcrichton/wasm-gc
     ```
-  - [wabt](https://github.com/WebAssembly/wabt)
+  - [wabt](https://github.com/WebAssembly/wabt):
+    useful for turning .wasm files into readable / debugable .wat text files
 
     ```
     git clone https://github.com/WebAssembly/wabt
@@ -39,9 +43,9 @@ You'll need to:
 
 ```
 # build with Cargo
-cargo +wasm32 build --release --target=wasm32-unknown-unknown
+cargo build --release --target=wasm32-unknown-unknown
 # optionally reduce WASM code size
-wasm-gc target/wasm32-unknown-unknown/release/screeps-wasm-test.wasm target/wasm32-unknown-unknown/release/screeps-wasm-test.wasm
+wasm-gc target/wasm32-unknown-unknown/release/*.wasm target/wasm32-unknown-unknown/release/*.wasm
 # run JS side
 node ./src/javascript/callit.js
 ```
