@@ -8,6 +8,7 @@ use MacroError;
 
 use arguments::KnownArgumentType;
 
+
 #[derive(Debug, Clone)]
 /// Small constructed ident struct supporting up to four suffixes.
 struct ConstructedArgIdent {
@@ -88,13 +89,46 @@ fn process_all_functions(input: &str) -> Result<String, Error> {
     Ok(full_out.to_string())
 }
 
-fn process_item(item: &syn::Item) -> Result<quote::Tokens, Error> {
+fn extract_func_info(item: &syn::Item) -> Result<(&syn::Item, &syn::FnDecl, &syn::Block), Error> {
     match item.node {
         syn::ItemKind::Fn(ref decleration, _, _, _, _, ref block) => {
-            generate_function_wrapper(item, decleration, block)
+            Ok((item, &**decleration, block))
         }
         ref kind => Err(MacroError::InvalidItemKind { kind: kind.clone() })?,
     }
+}
+
+// TODO: find and store doc-comments in here for use in generating JS code comments.
+pub struct JsFnInfo {
+    pub rust_name: String,
+    pub args_ty: Vec<KnownArgumentType>,
+    pub ret_ty: syn::Ty,
+}
+
+impl JsFnInfo {
+    pub fn try_from(item: &syn::Item) -> Result<Self, Error> {
+        let (item, decl, _) = extract_func_info(item)?;
+
+        let argument_types = get_argument_types(decl)?;
+        let ret_ty = match decl.output {
+            syn::FunctionRetTy::Default => syn::Ty::Tup(Vec::new()),
+            syn::FunctionRetTy::Ty(ref ty) => ty.clone(),
+        };
+
+        Ok(JsFnInfo {
+            rust_name: item.ident.to_string(),
+            args_ty: argument_types,
+            ret_ty: ret_ty,
+        })
+    }
+}
+
+fn process_item(item: &syn::Item) -> Result<quote::Tokens, Error> {
+    let (item, decl, block) = extract_func_info(item)?;
+
+    let out = generate_function_wrapper(item, decl, block)?;
+
+    Ok(out)
 }
 
 fn generate_function_wrapper(
@@ -151,12 +185,10 @@ fn generate_function_wrapper(
 
 fn expand_argument_into(
     arg_name: &ConstructedArgIdent,
-    ty: &syn::Ty,
+    ty: &KnownArgumentType,
     tokens: &mut quote::Tokens,
 ) -> Result<(), Error> {
-    let type_type = KnownArgumentType::try_from(ty)?;
-
-    match type_type {
+    match *ty {
         KnownArgumentType::U8SliceRef => {
             let ptr_arg_name = arg_name.with_suffix("_ptr");
             let length_arg_name = arg_name.with_suffix("_len");
@@ -180,11 +212,9 @@ fn expand_argument_into(
 
 fn setup_for_argument(
     arg_name: &ConstructedArgIdent,
-    ty: &syn::Ty,
+    ty: &KnownArgumentType,
 ) -> Result<quote::Tokens, Error> {
-    let type_type = KnownArgumentType::try_from(ty)?;
-
-    let tokens = match type_type {
+    let tokens = match *ty {
         KnownArgumentType::U8SliceRef => {
             // TODO: coordinate _ptr / _len suffixes
             let ptr_arg_name = arg_name.with_suffix("_ptr");
@@ -209,7 +239,7 @@ fn setup_for_argument(
     Ok(tokens)
 }
 
-fn get_argument_types(decl: &syn::FnDecl) -> Result<Vec<syn::Ty>, Error> {
+fn get_argument_types(decl: &syn::FnDecl) -> Result<Vec<KnownArgumentType>, Error> {
     Ok(decl.inputs
         .iter()
         .map(|input| match *input {
@@ -217,6 +247,11 @@ fn get_argument_types(decl: &syn::FnDecl) -> Result<Vec<syn::Ty>, Error> {
                 Err(MacroError::InvalidArgument { arg: input.clone() })
             }
             syn::FnArg::Captured(_, ref ty) | syn::FnArg::Ignored(ref ty) => Ok(ty.clone()),
+        })
+        .map(|ty_result| {
+            ty_result
+                .map_err(Into::into)
+                .and_then(|ty| KnownArgumentType::try_from(&ty))
         })
         .collect::<Result<_, _>>()?)
 }

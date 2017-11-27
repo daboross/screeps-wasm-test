@@ -27,7 +27,8 @@ macro_rules! js_fn {
 mod extern_definitions {
     use std::mem;
 
-    unsafe extern "C" fn __js_fn_alloc(len: usize) -> *mut u8 {
+    #[allow(non_snake_case)]
+    unsafe extern "C" fn __js_fn___builtin_alloc(len: usize) -> *mut u8 {
         let memory = Vec::<u8>::with_capacity(len);
 
         let ptr = memory.as_slice().as_ptr() as *mut u8;
@@ -37,7 +38,8 @@ mod extern_definitions {
         ptr
     }
 
-    unsafe extern "C" fn __js_fn_dealloc(ptr: *mut u8, len: usize) {
+    #[allow(non_snake_case)]
+    unsafe extern "C" fn __js_fn__builtin_dealloc(ptr: *mut u8, len: usize) {
         if len == 0 {
             return;
         }

@@ -10,6 +10,7 @@ extern crate syn;
 mod arguments;
 mod processing;
 mod source_searching;
+mod js_generation;
 
 use std::path::Path;
 use std::io::{Read, Write};
@@ -42,7 +43,8 @@ enum MacroError {
     UnexpectedReparseFailure { err_msg: String },
 }
 
-pub fn translate_files<P, U>(input_lib: P, output_file: U) -> Result<(), Error>
+// TODO: full Options struct for options, not just class name.
+pub fn translate_files<P, U>(input_lib: P, output_file: U, js_class_name: &str) -> Result<(), Error>
 where
     P: AsRef<Path>,
     U: AsRef<Path>,
@@ -57,7 +59,7 @@ where
         buffer
     };
 
-    let output = generate_js_from_all_macros_in(&contents)?;
+    let output = generate_js_from_all_macros_in(&contents, js_class_name)?;
 
     let mut handle = fs::OpenOptions::new()
         .create(true)
@@ -70,8 +72,16 @@ where
     Ok(())
 }
 
-pub fn generate_js_from_all_macros_in(source: &str) -> Result<String, Error> {
-    let func_definition_items = source_searching::walk_crate_for_js_fns(source);
+pub fn generate_js_from_all_macros_in(source: &str, js_class_name: &str) -> Result<String, Error> {
+    let func_definition_items = source_searching::walk_crate_for_js_fns(source)?;
 
-    Ok(format!("{:#?}", func_definition_items))
+    let js_fn_infos = func_definition_items
+        .into_iter()
+        .map(|item| processing::JsFnInfo::try_from(&item))
+        .collect::<Result<Vec<_>, _>>()?;
+
+    Ok(js_generation::generate_javascript(
+        js_class_name,
+        &js_fn_infos,
+    )?)
 }
