@@ -2,8 +2,7 @@ use std::fmt::Write;
 
 use failure::Error;
 
-use processing::JsFnInfo;
-use arguments::KnownArgumentType;
+use wasm_wrapper_gen_shared::{JsFnInfo, KnownArgumentType, TransformedRustIdent};
 
 use self::indented_write::WriteExt;
 
@@ -33,7 +32,7 @@ where
             }
         }
 
-        write_class_definition_finish(buf)?;
+        write_class_definition_finish(buf, js_class_name)?;
     }
     Ok(output_buffer)
 }
@@ -47,8 +46,7 @@ where
 {
     write!(
         buf,
-        r#"
-class {} {{
+        r#"class {} {{
     constructor(wasm_module) {{
         this._mod = new WebAssembly.Instance(wasm_module, {{
             // TODO: imports
@@ -71,9 +69,9 @@ where
 {
     write!(
         buf,
-        "['{}']: this._mod.exports[\"__js_fn_{}\"],\n",
+        "['{}']: this._mod.exports[\"{}\"],\n",
         info.rust_name,
-        info.rust_name
+        TransformedRustIdent::new(&info.rust_name)
     )?;
 
     Ok(())
@@ -201,11 +199,17 @@ where
 }
 
 
-fn write_class_definition_finish<T>(buf: &mut T) -> Result<(), Error>
+fn write_class_definition_finish<T>(buf: &mut T, js_class_name: &str) -> Result<(), Error>
 where
     T: Write,
 {
-    write!(buf, "}}\n")?;
+    write!(
+        buf,
+        r#"}}
+
+exports = module.exports = {}"#,
+        js_class_name
+    )?;
     Ok(())
 }
 

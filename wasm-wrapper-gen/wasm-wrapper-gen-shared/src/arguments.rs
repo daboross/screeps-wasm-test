@@ -1,7 +1,4 @@
-// TODO: after figuring out all what each crate needs to know, remove duplication by abstracting
-// things out into a shared '-backend' crate.
 use syn;
-use failure::Error;
 
 use MacroError;
 
@@ -24,7 +21,7 @@ fn resolve_parens(mut ty: &syn::Ty) -> &syn::Ty {
 }
 
 impl KnownArgumentType {
-    pub fn try_from(ty: &syn::Ty) -> Result<Self, Error> {
+    pub fn new(ty: &syn::Ty) -> Result<Self, MacroError> {
         let ty = resolve_parens(ty);
         if let syn::Ty::Rptr(_, ref slice_ty_mut) = *ty {
             let slice_ty = resolve_parens(&slice_ty_mut.ty);

@@ -1,12 +1,19 @@
-use std::fmt;
+extern crate arrayvec;
+#[macro_use]
+extern crate failure;
+#[macro_use]
+extern crate proc_macro_hack;
+#[macro_use]
+extern crate quote;
+extern crate syn;
 
-use {arrayvec, quote, syn};
+extern crate wasm_wrapper_gen_shared;
 
 use failure::{Error, ResultExt};
 
-use MacroError;
-
-use arguments::KnownArgumentType;
+use wasm_wrapper_gen_shared::{extract_func_info, get_argument_types,
+                              transform_macro_input_to_items, KnownArgumentType,
+                              TransformedRustIdent};
 
 
 #[derive(Debug, Clone)]
@@ -43,84 +50,33 @@ impl quote::ToTokens for ConstructedArgIdent {
     }
 }
 
-#[derive(Debug, Copy, Clone)]
-struct ConstructedFuncIdent<T> {
-    base: &'static str,
-    name: T,
-}
-
-impl<T> ConstructedFuncIdent<T> {
-    fn new(base: &'static str, name: T) -> ConstructedFuncIdent<T> {
-        ConstructedFuncIdent {
-            base: base,
-            name: name,
+proc_macro_item_impl! {
+    pub fn __js_fn_impl(input: &str) -> String {
+        match process_all_functions(input) {
+            Ok(v) => v,
+            Err(e) => {
+                panic!("js_fn macro failed: {}", e);
+            }
         }
     }
 }
 
-impl<T: fmt::Display> quote::ToTokens for ConstructedFuncIdent<T> {
-    fn to_tokens(&self, tokens: &mut quote::Tokens) {
-        tokens.append(format!("{}{}", self.base, self.name));
-    }
-}
-
 fn process_all_functions(input: &str) -> Result<String, Error> {
-    let ast = syn::parse_items(input).map_err(|e| {
+    let token_trees = syn::parse_token_trees(input).map_err(|e| {
         format_err!("failed to parse macro input as an item: {}", e)
     })?;
+
+    let ast = transform_macro_input_to_items(token_trees)?;
 
     let mut full_out = quote::Tokens::new();
     for item in &ast {
         let output = process_item(item).with_context(|e| {
             format!("failed to process function '{:?}': {}", item, e)
         })?;
-        // let ast_debug_str = format!("{:?}", item);
-
-        // let ident = &item.ident;
-
-        // let output = quote! (
-        //     fn #ident() -> String {
-        //         (#ast_debug_str).to_owned()
-        //     }
-        // );
 
         full_out.append(output);
     }
     Ok(full_out.to_string())
-}
-
-fn extract_func_info(item: &syn::Item) -> Result<(&syn::Item, &syn::FnDecl, &syn::Block), Error> {
-    match item.node {
-        syn::ItemKind::Fn(ref decleration, _, _, _, _, ref block) => {
-            Ok((item, &**decleration, block))
-        }
-        ref kind => Err(MacroError::InvalidItemKind { kind: kind.clone() })?,
-    }
-}
-
-// TODO: find and store doc-comments in here for use in generating JS code comments.
-pub struct JsFnInfo {
-    pub rust_name: String,
-    pub args_ty: Vec<KnownArgumentType>,
-    pub ret_ty: syn::Ty,
-}
-
-impl JsFnInfo {
-    pub fn try_from(item: &syn::Item) -> Result<Self, Error> {
-        let (item, decl, _) = extract_func_info(item)?;
-
-        let argument_types = get_argument_types(decl)?;
-        let ret_ty = match decl.output {
-            syn::FunctionRetTy::Default => syn::Ty::Tup(Vec::new()),
-            syn::FunctionRetTy::Ty(ref ty) => ty.clone(),
-        };
-
-        Ok(JsFnInfo {
-            rust_name: item.ident.to_string(),
-            args_ty: argument_types,
-            ret_ty: ret_ty,
-        })
-    }
 }
 
 fn process_item(item: &syn::Item) -> Result<quote::Tokens, Error> {
@@ -160,7 +116,7 @@ fn generate_function_wrapper(
         let __result: () = (#callable_body)(#arg_names_as_argument_list);
     });
 
-    let func_ident = ConstructedFuncIdent::new("__js_fn_", &item.ident);
+    let func_ident = TransformedRustIdent::new(&item.ident);
 
     let mut real_arguments_list = quote::Tokens::new();
     for (ty, arg_name) in argument_types.iter().zip(&argument_names) {
@@ -237,23 +193,6 @@ fn setup_for_argument(
     };
 
     Ok(tokens)
-}
-
-fn get_argument_types(decl: &syn::FnDecl) -> Result<Vec<KnownArgumentType>, Error> {
-    Ok(decl.inputs
-        .iter()
-        .map(|input| match *input {
-            syn::FnArg::SelfRef(_, _) | syn::FnArg::SelfValue(_) => {
-                Err(MacroError::InvalidArgument { arg: input.clone() })
-            }
-            syn::FnArg::Captured(_, ref ty) | syn::FnArg::Ignored(ref ty) => Ok(ty.clone()),
-        })
-        .map(|ty_result| {
-            ty_result
-                .map_err(Into::into)
-                .and_then(|ty| KnownArgumentType::try_from(&ty))
-        })
-        .collect::<Result<_, _>>()?)
 }
 
 fn generate_callable_body(
