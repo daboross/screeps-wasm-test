@@ -23,3 +23,26 @@ macro_rules! js_fn {
         }
     };
 }
+
+mod extern_definitions {
+    use std::mem;
+
+    unsafe extern "C" fn __js_fn_alloc(len: usize) -> *mut u8 {
+        let memory = Vec::<u8>::with_capacity(len);
+
+        let ptr = memory.as_slice().as_ptr() as *mut u8;
+
+        mem::forget(memory);
+
+        ptr
+    }
+
+    unsafe extern "C" fn __js_fn_dealloc(ptr: *mut u8, len: usize) {
+        if len == 0 {
+            return;
+        }
+        assert!(ptr as usize != 0);
+
+        Vec::<u8>::from_raw_parts(ptr, 0, len);
+    }
+}

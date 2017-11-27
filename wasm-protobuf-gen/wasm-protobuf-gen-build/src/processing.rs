@@ -1,32 +1,12 @@
-extern crate arrayvec;
-#[macro_use]
-extern crate failure;
-#[macro_use]
-extern crate failure_derive;
-#[macro_use]
-extern crate proc_macro_hack;
-#[macro_use]
-extern crate quote;
-extern crate syn;
-
-mod arguments;
-
 use std::fmt;
+
+use {arrayvec, quote, syn};
 
 use failure::{Error, ResultExt};
 
-use arguments::KnownArgumentType;
+use MacroError;
 
-#[derive(Debug, Fail)]
-enum MacroError {
-    #[fail(display = "expected function, found invalid item '{:?}'", kind)]
-    InvalidItemKind { kind: syn::ItemKind },
-    #[fail(display = "expected regular non-self function parameter, found '{:?}'", arg)]
-    InvalidArgument { arg: syn::FnArg },
-    #[fail(display = "expected one of the known argument types (&[u8], &mut [u8]), found '{:?}",
-           ty)]
-    UnhandledArgumentType { ty: syn::Ty },
-}
+use arguments::KnownArgumentType;
 
 #[derive(Debug, Clone)]
 /// Small constructed ident struct supporting up to four suffixes.
@@ -80,17 +60,6 @@ impl<T> ConstructedFuncIdent<T> {
 impl<T: fmt::Display> quote::ToTokens for ConstructedFuncIdent<T> {
     fn to_tokens(&self, tokens: &mut quote::Tokens) {
         tokens.append(format!("{}{}", self.base, self.name));
-    }
-}
-
-proc_macro_item_impl! {
-    pub fn __js_fn_impl(input: &str) -> String {
-        match process_all_functions(input) {
-            Ok(v) => v,
-            Err(e) => {
-                panic!("js_fn macro failed: {}", e);
-            }
-        }
     }
 }
 
